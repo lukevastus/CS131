@@ -1,5 +1,5 @@
 # CS131
-Programming languages course at UCLA
+<h1>Programming languages course at UCLA</h1>
 <b>Quarter</b>: Spring 2018 <br>
 <b>Instructor</b>: Paul Eggert <br>
 
