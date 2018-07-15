@@ -1,0 +1,57 @@
+
+The convert_grammar function simply returns a pair, with fst being
+the starting symbol and snd being the curried helper function, 
+namely find_rule_by_symbol. Given a symbol s and a list of rules l,
+it recursively searches for and appends all rules of s to a list. 
+
+The parse_prefix function consists of four parts: a helper function
+append_to_list which appends an element to the end of a list, two 
+mutually recursive functions match_frag_to_a_rule & 
+match_frag_from_rule_list, and a wrapper function actual_matcher.
+
+To write the parse_prefix function, by looking at the spec I assumed
+that one should use some depth-first search on the grammar tree and
+some backtracking. I start from the starting symbol. The function 
+match_frag_from_rule_list iterates through a list of rules and 
+attempts to match the fragment to each of the rules. It first calls
+match_frag_to_a_rule on the first rule in the list. If a match is
+found then it just returns whatever the acceptor returns; else it 
+looks at the next rule in the list. 
+
+The match_frag_to_a_rule function takes in a single rule and a 
+fragment and attempts to match each symbol in the fragment to each
+symbol in the rule, a pair at a time. Terminal symbols in the rule
+are directly matched to symbols in the fragment. Nonterminals in 
+the rule, on the other hand, are further traversed down the tree by
+using the production function in the grammar to get all rules 
+corresponding to the nonterminal and calling match_frag_from_rule_list
+to match the current fragment to one of these rules 
+(with a new acceptor, described below). 
+
+Eventually, when a matching prefix is found, the rule argument in 
+match_frag_to_a_rule will be empty and in this case it just applies
+the acceptor to the rest of the fragment. 
+
+A problem was that in match_frag_to_a_rule, upon encountering a nonterminal
+X in a rule R, match_frag_from_rule_list is called to match the 
+fragment's suffix to a rule on the rhs of X; however, after such a 
+match is found we still need to match the rest of the fragment to the 
+remaining symbols in the original rule R. To solve this problem a trick
+is used. Due to function currying, (match_frag_to_a_rule (rest_of_R) 
+(production_function)  (acceptor)) can be viewed as a function with the 
+same signature as a regular acceptor. Therefore when calling 
+match_frag_from_rule_list inside match_frag_to_a_rule I passed in this 
+new "acceptor" so that after finding a match for the prefix, this new
+"acceptor" will be applied and finish what is left off in R.
+
+Initially I considered finding all terminal symbols, matching them to 
+the fragment and traversing from the bottom to produce the derivation. 
+However, it is hard to find the "parent" for each terminal given the 
+structure of the grammar. Therefore this approach was rejected. 
+
+A weakness of my implementation is that it creates an infinite loop when
+dealing with blind-alley grammars. This is because the spec requires the
+matcher to look at the rules from left-to-right and it cannot skip blind-
+alley rules if they come first. Also, since rules are always tried from
+left to right, sometimes the matching prefix of the fragment is not 
+always the longest match. 
